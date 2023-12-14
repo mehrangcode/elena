@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <title>ELENA</title>
+    <style>
+        .loaderLabel {
+            width: 120px;
+            background: #8e3aac;
+            color: #eee;
+            padding: 0.5rem 1rem;
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translate(-50%);
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+            z-index: 2;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(4, minmax(150px, 1fr));
+            grid-gap: 0.5rem;
+            height: calc(100vh - 4rem);
+            width: 600px;
+            max-width: 100%;
+            padding-bottom: 2rem;
+            margin: 0 auto;
+        }
+
+        .gameState {
+            margin: 2rem auto 0.5rem;
+            text-align: center;
+            width: max-content;
+            border: 1px solid #ccc;
+            padding: 9px;
+            border-radius: 4px;
+        }
+
+        .gallery {
+            text-align: center;
+        }
+
+        .flip-card {
+            width: 100%;
+            height: 100%;
+            perspective: 1000px;
+            background-color: transparent;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .flip-card.rotated .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .imageCard {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+        }
+
+        .flip-card-front,
+        .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        .flip-card-front {
+            background: rgb(34, 193, 195);
+            background: linear-gradient(0deg, rgba(34, 193, 195, 1) 0%, rgba(45, 253, 156, 1) 100%);
+        }
+
+        .flip-card-back {
+            background-color: #2980b9;
+            color: white;
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+
+<body>
+    <label for="loader" class="loaderLabel">
+        انتخاب عکس
+        <input type="file" name="loader" id="loader" onchange="loadImage(event)" multiple style="display: none;">
+    </label>
+    <!-- <button onclick="resetTheGame()">Reset</button> -->
+    <div class="gameState">
+        برای شروع بازی 6 تا یا بیشتر عکس از گالریت انتخاب کن
+    </div>
+    <div class="gallery"></div>
+    <div class="cards"> </div>
+    <script>
+        const resolved = []
+        let guesses = []
+        let cardsData = []
+        function flipCards(loadedImages) {
+            let tempArray = cardsData.filter(x => !x.src)
+            const unusedImages = loadedImages.filter(x => !cardsData.some(c => x.num === c.imageIndex))
+            const choosenCardIndex = Math.floor(Math.random() * unusedImages.length)
+            const choosenCard = unusedImages[choosenCardIndex]
+            if (choosenCard) {
+                const fistIndex = tempArray[Math.floor(Math.random() * tempArray.length)]
+                cardsData[fistIndex.index] = { ...cardsData[fistIndex.index], imageIndex: choosenCard.num, src: choosenCard.url }
+                tempArray = tempArray.filter((x) => x.index !== fistIndex.index)
+                const secondIndex = tempArray[Math.floor(Math.random() * tempArray.length)]
+                cardsData[secondIndex.index] = { ...cardsData[secondIndex.index], imageIndex: choosenCard.num, src: choosenCard.url }
+            }
+            if (cardsData.filter(x => !x.src)?.length > 0) {
+                console.log("cardsData: ", cardsData.filter(x => !x.src)?.length)
+                setTimeout(() => {
+                    flipCards(loadedImages)
+                }, 300);
+
+            } else {
+                renderImages()
+            }
+        }
+
+        function checkGuesses() {
+            if (guesses.length === 2) {
+                if (cardsData[guesses[0]]?.imageIndex === cardsData[guesses[1]]?.imageIndex) {
+                    resolved.push(guesses[0])
+                    resolved.push(guesses[1])
+                    guesses = []
+                    rotateCards()
+                    if (resolved.length === 12) {
+                        document.querySelector(".gameState").innerHTML = "آفرین تو بردی ساخت مرحله جدید ..."
+                        document.querySelector(".gameState").style.display = "block";
+                        setTimeout(() => {
+                            location.reload()
+                        }, 1000);
+                    }
+                } else {
+                    setTimeout(() => {
+                        guesses = []
+                        rotateCards()
+                    }, 500);
+                }
+            }
+            rotateCards()
+        }
+        function rotateCards() {
+            const cards = document.querySelectorAll(".flip-card")
+            cards.forEach((card, index) => {
+                if (guesses.includes(index) || resolved.includes(index)) {
+                    card.className = "flip-card rotated"
+                } else {
+                    card.className = "flip-card"
+                }
+            })
+        }
+        function renderImages() {
+            document.querySelector(".gameState").innerHTML = ""
+            document.querySelector(".gameState").style.display = "none";
+            document.querySelector(".gallery").style.display = "none";
+            const rootElement = document.querySelector(".cards")
+            rootElement.innerHTML = ""
+            console.log(cardsData.map(x => x.imageIndex))
+            cardsData.forEach((imageData, index) => {
+                const card = document.createElement("div")
+                card.className = "flip-card"
+                const cardInner = document.createElement("div")
+                cardInner.className = "flip-card-inner"
+                const cardFront = document.createElement("div")
+                cardFront.className = "flip-card-front"
+                cardFront.addEventListener("click", function () {
+                    console.log(guesses)
+                    if (guesses[1]) return
+                    if (typeof guesses[0] != "number") {
+                        guesses[0] = index
+                    } else if (typeof guesses[1] != "number") {
+                        guesses[1] = index
+                    }
+                    checkGuesses()
+                })
+                const cardBack = document.createElement("div")
+                cardBack.className = "flip-card-back"
+
+                const img = document.createElement("img")
+                img.className = "imageCard"
+                img.src = "data:image/jpeg;base64," + imageData.src
+                cardFront.innerHTML = ""
+                cardBack.appendChild(img)
+                cardInner.appendChild(cardFront)
+                cardInner.appendChild(cardBack)
+                card.appendChild(cardInner)
+                rootElement.appendChild(card)
+            });
+        }
+        function manageGame() {
+            cardsData = new Array(12).fill(0).map((x, index) => ({ index, imageIndex: undefined, src: undefined }));
+            let cards = JSON.parse(localStorage.getItem("images"))
+            document.querySelector(".gallery").innerHTML = "تعداد عکسهای موجود در گالری: " + cards.length
+            if (cards?.length >= 6) {
+                document.querySelector(".gameState").innerHTML = "در حال ساخت مرحله"
+                flipCards(cards.map((x, i) => ({ num: i, url: x })))
+            }
+        }
+        // data:image/jpeg;base64,
+        function imageToBase64(file, callback) {
+            let reader = new FileReader();
+            reader.onload = function () {
+                // The result is a data URL with the format data:image/jpeg;base64,<base64 string>
+                let base64 = reader.result.split(",")[1]; // Get the base64 string only
+                callback(base64);
+            };
+            reader.readAsDataURL(file); // Read the file as a data URL
+        }
+
+        // Example usage
+        function loadImage(e) {
+            let images = []
+            if (localStorage.getItem("images")) {
+                images = JSON.parse(localStorage.getItem("images"))
+            }
+            console.log(e.target.files.length, e.target.files)
+            for (let i = 0; i < e.target.files.length; i++) {
+                const file = e.target.files[i]
+                console.log("FILE: ", file)
+                imageToBase64(file, function (imageData) {
+                    images.push(imageData)
+                    console.log(images)
+                    localStorage.setItem("images", JSON.stringify(images))
+                    document.querySelector(".gallery").innerHTML = "تعداد عکسهای موجود در گالری: " + images.length
+                    if (images.length <= 6) {
+                        setTimeout(() => {
+                            manageGame()
+                        }, 1000);
+                    }
+                });
+            }
+        }
+        manageGame()
+        function resetTheGame() {
+            localStorage.removeItem("images")
+            location.reload()
+        }
+    </script>
+</body>
+
+</html>
