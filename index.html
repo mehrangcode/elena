@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="https://mehrangcode.github.io/elena/manifest.json">
     <title>ELENA</title>
     <style>
         .loaderLabel {
@@ -207,7 +207,7 @@
         function manageGame() {
             cardsData = new Array(12).fill(0).map((x, index) => ({ index, imageIndex: undefined, src: undefined }));
             let cards = JSON.parse(localStorage.getItem("images"))
-            document.querySelector(".gallery").innerHTML = "تعداد عکسهای موجود در گالری: " + cards.length
+            document.querySelector(".gallery")?.innerHTML = "تعداد عکسهای موجود در گالری: " + cards.length
             if (cards?.length >= 6) {
                 document.querySelector(".gameState").innerHTML = "در حال ساخت مرحله"
                 flipCards(cards.map((x, i) => ({ num: i, url: x })))
