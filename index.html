@@ -98,7 +98,7 @@
 <body>
     <label for="loader" class="loaderLabel">
         انتخاب عکس
-        <input type="file" name="loader" id="loader" onchange="loadImage(event)" multiple style="display: none;">
+        <input type="file" name="loader" id="loader" onchange="loadImage(event)" multiple style="display: none;" accept="image/png, image/gif, image/jpeg">
     </label>
     <!-- <button onclick="resetTheGame()">Reset</button> -->
     <div class="gameState">
@@ -207,7 +207,9 @@
         function manageGame() {
             cardsData = new Array(12).fill(0).map((x, index) => ({ index, imageIndex: undefined, src: undefined }));
             let cards = JSON.parse(localStorage.getItem("images"))
-            document.querySelector(".gallery")?.innerHTML = "تعداد عکسهای موجود در گالری: " + cards.length
+            if(cards !== null) {
+                document.querySelector(".gallery").innerHTML = ` تعداد عکسهای موجود در گالری:  ${cards?.length} `
+            }
             if (cards?.length >= 6) {
                 document.querySelector(".gameState").innerHTML = "در حال ساخت مرحله"
                 flipCards(cards.map((x, i) => ({ num: i, url: x })))
